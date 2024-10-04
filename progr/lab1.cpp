@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <string>
 
 
 #define M_PI
@@ -14,80 +15,81 @@ int lowhigh = 0;
 int determ();
 void zone();
 double funct(double x);
-double calcul();
+std::string calcul();
 
 int main() {
-	//РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РєРѕСЂРЅСЏ С„СѓРЅРєС†РёРё РІ Р·Р°РґР°РЅРЅС‹С… РіСЂР°РЅРёС†Р°С… (Рё СЂР°СЃС€РёСЂРµРЅРёРµ РЅР° 0.5 + РјРѕР¶РЅРѕ СЃСЂР°Р·Сѓ РІС‚РѕСЂСѓСЋ РіСЂР°РЅРёС†Сѓ РґРѕРґРІРёРЅСѓС‚СЊ)
-	//РёРЅРІРµСЂСЃРёСЏ L R, РµСЃР»Рё С„СѓРЅРєС†РёСЏ РІРѕР·СЂР°СЃС‚Р°РµС‚
+	//проверка на наличие корня функции в заданных границах (и расширение на 0.5 + можно сразу вторую границу додвинуть)
+	//инверсия L R, если функция возрастает
 	determ();
 	zone();
-	std::cout << "{M=" << calcul() << "; k=" << iter << "; Ep=" << funct(M) << "}" << std::endl;
+	std::cout << calcul() << std::endl;
+	//std::cout << "{M=" << calcul() << "; k=" << iter << "; Ep=" << funct(M) << "}" << std::endl;
 	
 }
-int determ() {//РїРµСЂРµСЃС‡С‘С‚ R РґРѕ РїСЂРѕС‚. Р·РЅР°РєР° СЃ С€Р°РіРѕРј 0.5
+int determ() {//пересчёт R до прот. знака с шагом 0.5
 	if (R < 0) {
 		while (R <= 0) { R += 0.5; }
 	}
 	else { 
 		while (R >= 0) { R -= 0.5; } 
 	}
-	std::cout << "L: " << L << "  R: " << R << std::endl;
+	//std::cout << "L: " << L << "  R: " << R << std::endl;
 	return R;
 }
-void zone() {//РїСЂРѕРІРµСЂРєР° РЅР° РЅР°Р»РёС‡РёРµ РєРѕСЂРЅСЏ С„СѓРЅРєС†РёРё РІ Р·Р°РґР°РЅРЅС‹С… РіСЂР°РЅРёС†Р°С…
-	if (funct(L) > funct(R)) { //РµСЃР»Рё С„СѓРЅРєС†РёСЏ СѓР±С‹РІР°РµС‚
+void zone() {//проверка на наличие корня функции в заданных границах
+	if (funct(L) > funct(R)) { //если функция убывает
 		lowhigh = 1;
-		std::cout << "go low" << std::endl;
-		while (funct(L) < 0 or funct(R) > 0) {//РїРѕРєР° РєРѕСЂРµРЅСЊ РІРЅРµ РіСЂР°РЅРёС†
-			if (funct(L) < 0) { //РµСЃР»Рё РєРѕСЂРµРЅСЊ РЅРµ РІ Р»РµРІРѕР№ РіСЂР°РЅРёС†Рµ
-				std::cout << "no target" << std::endl;
+		//std::cout << "go low" << std::endl;
+		while (funct(L) < 0 or funct(R) > 0) {//пока корень вне границ
+			if (funct(L) < 0) { //если корень не в левой границе
+				//std::cout << "no target" << std::endl;
 				L -= 0.5;
 			}
-			if (funct(R) > 0) { //РµСЃР»Рё РєРѕСЂРµРЅСЊ РЅРµ РІ РїСЂР°РІРѕР№ РіСЂР°РЅРёС†Рµ
-				std::cout << "no target" << std::endl;
+			if (funct(R) > 0) { //если корень не в правой границе
+				//std::cout << "no target" << std::endl;
 				R += 0.5;
 			}
 		}
 	}
-	else{//С„СѓРЅРєС†РёСЏ РІРѕР·СЂР°СЃС‚Р°РµС‚
-		std::cout << "go high" << std::endl;
-		while (funct(L) > 0 or funct(R) < 0) {//РїРѕРєР° РєРѕСЂРµРЅСЊ РІРЅРµ РіСЂР°РЅРёС†
-			if (funct(L) > 0) { //РµСЃР»Рё РєРѕСЂРµРЅСЊ РЅРµ РІ Р»РµРІРѕР№ РіСЂР°РЅРёС†Рµ
-				std::cout << "no target" << std::endl;
+	else{//функция возрастает
+		//std::cout << "go high" << std::endl;
+		while (funct(L) > 0 or funct(R) < 0) {//пока корень вне границ
+			if (funct(L) > 0) { //если корень не в левой границе
+				//std::cout << "no target" << std::endl;
 				L -= 0.5;
 			}
-			if (funct(R) < 0) { //РµСЃР»Рё РєРѕСЂРµРЅСЊ РЅРµ РІ РїСЂР°РІРѕР№ РіСЂР°РЅРёС†Рµ
-				std::cout << "no target" << std::endl;
+			if (funct(R) < 0) { //если корень не в правой границе
+				//std::cout << "no target" << std::endl;
 				R += 0.5;
 			}
 		}
 	}
-	std::cout << "True L: " << L << "  True R: " << R << std::endl;
+	//std::cout << "True L: " << L << "  True R: " << R << std::endl;
 }
-double calcul(){ //СЂР°СЃСЃС‡С‘С‚ M
+std::string calcul(){ //рассчёт M
 	M = (L + R) / 2;
-	while (abs(funct(M)) > E) { //РїРѕРєР° Р±РѕР»СЊС€Рµ РїРѕРіСЂРµС€РЅРѕСЃС‚Рё 
+	while (abs(funct(M)) > E) { //пока больше погрешности 
 		M = (L + R) / 2;
-		std::cout << "M: " << M << "  funct M: " << funct(M) << std::endl;
-		if (funct(M) < 0) { //РµСЃР»Рё РЅРµ РґРѕС€Р»Рѕ РґРѕ РЅСѓР»СЏ РїРѕ Р»РµРІРѕР№ РіСЂР°РЅРёС†Рµ
+		//std::cout << "M: " << M << "  funct M: " << funct(M) << std::endl;
+		if (funct(M) < 0) { //если не дошло до нуля по левой границе
 			if(lowhigh){
-				R = M; //РґРІРёРіР°РµРј РіСЂР°РЅРёС†Сѓ, РґР»СЏ СѓР±С‹РІР°СЋС‰РµР№
+				R = M; //двигаем границу, для убывающей
 			}
-			else { L = M; }//РґР»СЏ РІРѕР·СЂР°СЃС‚Р°СЋС‰РµР№
-			std::cout << "New L: " << L << std::endl;
+			else { L = M; }//для возрастающей
+			//std::cout << "New L: " << L << std::endl;
 		}
-		else { //РµСЃР»Рё РЅРµ РґРѕС€Р»Рѕ РїРѕ РїСЂР°РІРѕР№ РіСЂР°РЅРёС†Рµ
+		else { //если не дошло по правой границе
 			if (lowhigh) { L = M; }
 			else{ R = M; }
-			std::cout << "New R: " << R << std::endl;
+			//std::cout << "New R: " << R << std::endl;
 		}
 		iter += 1;
 	}
-	std::cout << "Target M: " << M << "  his funct: " << funct(M) << std::endl;
-	std::cout << "Iterations count: " << iter << std::endl;
-	return M;
+	//std::cout << "Target M: " << M << "  his funct: " << funct(M) << std::endl;
+	//std::cout << "Iterations count: " << iter << std::endl;
+	return "{M=" + std::to_string(M) + "; k=" + std::to_string(iter) + "; Ep=" + std::to_string(funct(M)) + "}";
 };
 double funct(double x) {
-	//return cos(2*x + 3.1415 / 2) + x + 8;//РІР°СЂРёР°РЅС‚ 1, РєРѕСЂРµРЅСЊ РІ -7.9 (РІРѕР·СЂР°СЃС‚Р°РµС‚)
-	return 0.7 * (sin(x / 2) + cos(2 * x)) - x; //РІР°СЂРёР°РЅС‚ 4, РєРѕСЂРµРЅСЊ РІ 0.5 (СѓР±С‹РІР°РµС‚)
+	//return cos(2*x + 3.1415 / 2) + x + 8;//вариант 1, корень в -7.9 (возрастает)
+	return 0.7 * (sin(x / 2) + cos(2 * x)) - x; //вариант 4, корень в 0.5 (убывает)
 };
