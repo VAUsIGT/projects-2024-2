@@ -228,24 +228,26 @@ void quickSort(std::vector<int>& arr, int low, int high) {
     }
 }
 
-// Внешняя многофазная сортировка (External Multi-Phase Sort)
-void externalSort(const std::string& inputFileName, const std::string& outputFileName, size_t memoryLimit) {
+// Внешняя многофазная сортировка (External Multi-Phase Sort) - используется для сортировки больших данных, когда озу не справляется, вместо
+// вместо этого использует диск. Данные читаются из исходника по частям (которые могут поместиться в память), сортируются и записываются во
+// временные файлы, из которых записываются в конечный общий файл. Сложность O(m*(log k + log b)) m-элементы,k-размер блока, b-колво файлов
+void externalSort(const std::string& inputFileName, const std::string& outputFileName, size_t memoryLimit) { //memoryLimit - огр. памяти = 5
     std::ifstream inputFile(inputFileName);
     std::vector<int> buffer;
     std::vector<std::string> tempFiles;
 
-    // Чтение входного файла и создание отсортированных временных файлов
+    // Чтение входного файла и создание отсортированных временных файлов O(k*log k), k=5
     while (!inputFile.eof()) {
         int num;
-        while (buffer.size() < memoryLimit && inputFile >> num) {
+        while (buffer.size() < memoryLimit && inputFile >> num) { //читаем 5
             buffer.push_back(num);
         }
-        std::sort(buffer.begin(), buffer.end());
+        std::sort(buffer.begin(), buffer.end()); //quick sort
 
         std::string tempFileName = "temp_" + std::to_string(tempFiles.size()) + ".txt";
         std::ofstream tempFile(tempFileName);
         for (int n : buffer) {
-            tempFile << n << " ";
+            tempFile << n << " "; //запись во временный файл
         }
         tempFile.close();
         tempFiles.push_back(tempFileName);
@@ -254,11 +256,12 @@ void externalSort(const std::string& inputFileName, const std::string& outputFil
     }
     inputFile.close();
 
-    // Слияние временных файлов в результирующий файл
-    using MinHeapNode = std::pair<int, int>; // Пара значений: (значение, индекс файла)
+    // Слияние временных файлов в результирующий файл  O(m*log b), m общее колво чисел, b колво файлов
+    using MinHeapNode = std::pair<int, int>; // пара значений: (значение, индекс файла)
     std::priority_queue<MinHeapNode, std::vector<MinHeapNode>, std::greater<>> minHeap;
     std::vector<std::ifstream> tempStreams(tempFiles.size());
 
+    // инициализац. мин кучи, помещаем каждый 1 элемент файлов в кучу
     for (size_t i = 0; i < tempFiles.size(); i++) {
         tempStreams[i].open(tempFiles[i]);
         int num;
@@ -271,10 +274,10 @@ void externalSort(const std::string& inputFileName, const std::string& outputFil
         MinHeapNode node = minHeap.top();
         minHeap.pop();
 
-        int val = node.first;
-        int index = node.second;
+        int val = node.first; //мин элем
+        int index = node.second; //индекс файла
 
-        outputFile << val << " ";
+        outputFile << val << " "; // помещаем мин. число кучи в файл
 
         int num;
         if (tempStreams[index] >> num) {
@@ -368,7 +371,7 @@ int main() {
     
         input.close();
 
-        externalSort(inputFile, outputFile, 5); // Ограничение памяти для демонстрации
+        externalSort(inputFile, outputFile, 5); // 5 - ограничение памяти для демонстрации
     }
         std::cout << "Отсортировано внешней сортировкой, результат в файле output.txt\n";
         return 0;
