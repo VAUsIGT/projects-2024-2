@@ -1,142 +1,172 @@
-// Хеш-таблица используется для эффективного хранения и поиска данных, каждое слово преобразуется с помощью хеш-функции в индекс, 
-// который определяет ячейку в массиве. Если два элемента попадают в одну ячейку (коллизия), создается бинарное дерево для 
-// разрешения этой коллизии. 
-
 #include <iostream>
-#include <fstream>
 #include <string>
-#include <vector>
-#include <list>
-#include <functional>
+#include <cctype>
+#include <stdexcept>
 
-// Узел для хеш-таблицы
-struct HashNode {
-    std::string key; // поле для хранения строки
-    HashNode* left; // указатели на поддеревья (левое)
-    HashNode* right; // //указатели на поддеревья (правое)
-
-    HashNode(const std::string& key) : key(key), left(nullptr), right(nullptr) {} //инициализирует узел с ключом и обнуляет указатели.
+struct Node {
+    int value;
+    Node* left;
+    Node* right;
+    Node(int v) : value(v), left(nullptr), right(nullptr) {}
 };
 
-// Хеш-таблица
-class HashTable {
-private:
-    std::vector<HashNode*> table; // вектор указателей на корни бинарных деревьев, реализующий таблицу
-    std::hash<std::string> hashFunction;
-    size_t size; //размер таблицы (количество слотов)
+// Глобальные переменные для удобства парсинга
+std::string input;
+size_t pos = 0;
 
-    void insertNode(HashNode*& root, const std::string& key) {
-        if (!root) {
-            root = new HashNode(key); // если текущий корень пуст, создается новый узел
-        }
-        // если ключ меньше текущего узла, слово добавляется в левое поддерево, иначе в правое
-        else if (key < root->key) {
-            insertNode(root->left, key);
-        }
-        else {
-            insertNode(root->right, key);
-        }
-    }
-    // Прямой обход (обрабатывает сначала -> текущий узел -> левое -> правое поддеревья)
-    void preOrder(HashNode* node) const {
-        if (node) {
-            std::cout << node->key << " ";
-            preOrder(node->left);
-            preOrder(node->right);
-        }
-    }
-    // Центральный (лево, центр, право)
-    void inOrder(HashNode* node) const {
-        if (node) {
-            inOrder(node->left);
-            std::cout << node->key << " ";
-            inOrder(node->right);
-        }
-    }
-    // Концевой (лево, право, центр)
-    void postOrder(HashNode* node) const {
-        if (node) {
-            postOrder(node->left);
-            postOrder(node->right);
-            std::cout << node->key << " ";
-        }
-    }
+// Прототипы функций
+Node* parseTree();
+Node* parseNode();
+int parseNumber();
 
-public:
-    explicit HashTable(size_t size) : size(size) {
-        table.resize(size, nullptr);
+// Пропускаем пробелы
+void skipSpaces() {
+    while (pos < input.size() && std::isspace((unsigned char)input[pos])) {
+        pos++;
     }
+}
 
-    // Вставка в хеш - таблицу
-    void insert(const std::string& key) {
-        size_t index = hashFunction(key) % size; // индекс ячейки для слова
-        insertNode(table[index], key); // добавляет слово в дерево, если в этой ячейке уже есть узлы
+// Считываем число (узел без потомков)
+int parseNumber() {
+    skipSpaces();
+    if (pos >= input.size() || !std::isdigit((unsigned char)input[pos]))
+        throw std::runtime_error("Ожидалось число");
+    int num = 0;
+    while (pos < input.size() && std::isdigit((unsigned char)input[pos])) {
+        num = num * 10 + (input[pos] - '0');
+        pos++;
     }
-    
-    // Вызов обхода
-    void traversePreOrder() const {
-        for (const auto& root : table) {
-            preOrder(root);
-        }
-        std::cout << std::endl;
-    }
-    // Вызов обхода
-    void traverseInOrder() const {
-        for (const auto& root : table) {
-            inOrder(root);
-        }
-        std::cout << std::endl;
-    }
-    // Вызов обхода
-    void traversePostOrder() const {
-        for (const auto& root : table) {
-            postOrder(root);
-        }
-        std::cout << std::endl;
-    }
-    // деструктор класса
-    ~HashTable() {
-        for (auto& root : table) {
-            deleteTree(root);
-        }
-    }
+    skipSpaces();
+    return num;
+}
 
-private:
-    // удаление узлов
-    void deleteTree(HashNode* node) {
-        if (node) {
-            deleteTree(node->left);
-            deleteTree(node->right);
-            delete node;
+// Парсим узел. Узел - это число. За ним может следовать (поддерево).
+// Формат узла может быть:
+// ЧИСЛО
+// или
+// ЧИСЛО(ЛЕВОЕ_ПОДДЕРЕВО,ПРАВОЕ_ПОДДЕРЕВО)
+Node* parseNode() {
+    skipSpaces();
+    int val = parseNumber();
+    Node* node = new Node(val);
+    skipSpaces();
+    // Проверяем, есть ли поддеревья
+    if (pos < input.size() && input[pos] == '(') {
+        // Пропускаем '('
+        pos++;
+        skipSpaces();
+        // Парсим левое поддерево
+        // Может быть пустым, если сразу запятая
+        Node* leftSubtree = nullptr;
+        if (pos < input.size() && input[pos] != ',' && input[pos] != ')') {
+            // Есть левый узел
+            leftSubtree = parseNode();
         }
+
+        skipSpaces();
+        if (pos >= input.size() || input[pos] != ',')
+            throw std::runtime_error("Ожидалась запятая после левого поддерева");
+        pos++; // пропускаем ','
+        skipSpaces();
+
+        // Парсим правое поддерево
+        Node* rightSubtree = nullptr;
+        if (pos < input.size() && input[pos] != ')') {
+            // Есть правый узел
+            rightSubtree = parseNode();
+        }
+
+        skipSpaces();
+        if (pos >= input.size() || input[pos] != ')')
+            throw std::runtime_error("Ожидалась закрывающая скобка ')'");
+        pos++; // пропускаем ')'
+
+        node->left = leftSubtree;
+        node->right = rightSubtree;
     }
-};
+    return node;
+}
+
+// Парсим всё дерево (по сути, это обёртка, если корень без дополнительных скобок)
+Node* parseTree() {
+    skipSpaces();
+    if (pos >= input.size())
+        return nullptr;
+    Node* root = parseNode();
+    skipSpaces();
+    if (pos != input.size()) {
+        // Если остались непарсенные символы, это ошибка
+        // Но можно считать допустимым, если формат полностью соответствует одному дереву
+    }
+    return root;
+}
+
+// прямой обход
+void preOrderPrint(Node* root) {
+    if (!root) return;
+    std::cout << root->value << " ";
+    preOrderPrint(root->left);
+    preOrderPrint(root->right);
+}
+ // центральный обход
+void inOrderPrint(Node* root) {
+    if (!root) return;
+    inOrderPrint(root->left);
+    std::cout << root->value << " ";
+    inOrderPrint(root->right);
+}
+// концевой обход
+void postOrderPrint(Node* root) {
+    if (!root) return;
+    postOrderPrint(root->left);
+    postOrderPrint(root->right);
+    std::cout << root->value << " ";
+}
+// деструктор
+void deleteTree(Node* root) {
+    if (!root) return;
+    deleteTree(root->left);
+    deleteTree(root->right);
+    delete root;
+}
 
 int main() {
     setlocale(LC_ALL, "Russian");
-    std::ifstream inputFile("text.txt");  // читаем
-    if (!inputFile.is_open()) {
-        std::cerr << "Ошибка: не удалось открыть файл." << std::endl;
+    std::cout << "Введите дерево в формате, например: 8 (3 (1,6(4,7)),10(,14(13,)))\n";
+    std::getline(std::cin, input);
+
+    // Удаляем пробелы для удобства
+    {
+        std::string tmp;
+        for (char c : input) {
+            // Можно оставить пробелы или убрать. Если оставим, парсер пропускает их.
+            // Здесь можно просто оставить, так как skipSpaces() их обработает.
+            tmp.push_back(c);
+        }
+        input = tmp;
+    }
+
+    Node* root = nullptr;
+    try {
+        root = parseTree();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Ошибка при разборе: " << e.what() << "\n";
         return 1;
     }
 
-    HashTable hashTable(10);
-    std::string word;
+    std::cout << "Прямой обход:\n";
+    preOrderPrint(root);
+    std::cout << "\n";
 
-    while (inputFile >> word) { // читает 1 слово
-        hashTable.insert(word); // добавляет в хеш таблицу
-    }
+    std::cout << "Центральный обход:\n";
+    inOrderPrint(root);
+    std::cout << "\n";
 
-    inputFile.close();
+    std::cout << "Концевой обход:\n";
+    postOrderPrint(root);
+    std::cout << "\n";
 
-    std::cout << "Обход в прямом порядке:" << std::endl;
-    hashTable.traversePreOrder();
-
-    std::cout << "Обход в центральном порядке:" << std::endl;
-    hashTable.traverseInOrder();
-
-    std::cout << "Обход в концевом порядке:" << std::endl;
-    hashTable.traversePostOrder();
-
+    deleteTree(root);
     return 0;
 }
