@@ -2,6 +2,7 @@ def generate_string(n):
     # Генерируем строку из языка: + a^(2n) b^(n)
     return ['+'] + ['a'] * (2 * n) + ['b'] * n
 
+
 # Определяем грамматику в НФХ
 grammar = {
     'S': [('P', 'X')],
@@ -18,7 +19,7 @@ grammar = {
     'B': [('b',)]
 }
 
-# Соберём множества правил вида V -> t и V -> V1 V2 для удобства
+# Собираем правила
 term_productions = {}
 var_productions = {}
 
@@ -32,16 +33,13 @@ for left_side, productions in grammar.items():
 
 def cyk_parse(w):
     n = len(w)
-    # П-таблица: P[i][j] = множество нетерминалов, выводящих w[i:j+1]
     P = [[set() for _ in range(n)] for _ in range(n)]
 
-    # Заполняем первый уровень (один символ)
     for i in range(n):
         t = w[i]
         if t in term_productions:
             P[i][i] = P[i][i].union(term_productions[t])
 
-    # Цикл по длине подстроки
     for length in range(2, n + 1):
         for i in range(n - length + 1):
             j = i + length - 1
@@ -52,6 +50,16 @@ def cyk_parse(w):
                             P[i][j] = P[i][j].union(var_productions[(A, B)])
     return P
 
+
+def shorten_list(items, max_display=5):
+    """Сократить список или множество, если слишком много элементов,
+    оставив первые 2, потом ..., потом последние 2."""
+    items_list = sorted(items)
+    if len(items_list) > max_display:
+        return items_list[:2] + ["..."] + items_list[-2:]
+    return items_list
+
+
 # Пример для строки длиной 10 символов (n=3)
 w = generate_string(3)  # + a a a a a a b b b
 print("Input string:", " ".join(w))
@@ -59,7 +67,7 @@ print("Input string:", " ".join(w))
 P = cyk_parse(w)
 n = len(w)
 
-# Печать CYK-таблицы в табличном виде
+# Печать CYK-таблицы в табличном виде с сокращением слишком больших наборов
 print("\nCYK Parse Table:")
 cell_width = 20
 header = " " * 6 + "".join([f"j={j}".center(cell_width) for j in range(n)])
@@ -70,21 +78,19 @@ for i in range(n):
         if j < i:
             row_str += " " * cell_width
         else:
-            # Превратим множество в строку
             if P[i][j]:
-                cell_content = "{" + ",".join(sorted(P[i][j])) + "}"
+                shortened = shorten_list(P[i][j], max_display=5)
+                cell_content = "{" + ",".join(shortened) + "}"
             else:
                 cell_content = "{}"
             row_str += cell_content.center(cell_width)
     print(row_str)
 
-# Проверяем выводимость
 if 'S' in P[0][n - 1]:
     print("\nСтрока выводится из S.")
 else:
     print("\nСтрока не выводится из S.")
 
-# Для Эрли
 earley_grammar = {
     'S': [['P', 'X']],
     'X': [['A', 'A', 'X', 'B'], ['A', 'A', 'A', 'A', 'B', 'B']],
@@ -93,13 +99,14 @@ earley_grammar = {
     'B': [['b']]
 }
 
+
 def is_terminal(symbol):
     return symbol in ['+', 'a', 'b']
+
 
 def earley_parse(words, grammar, start_symbol='S'):
     chart = [set() for _ in range(len(words) + 1)]
 
-    # Инициализируем стартовые правила
     for production in grammar[start_symbol]:
         chart[0].add((start_symbol, tuple(), tuple(production), 0))
 
@@ -156,7 +163,7 @@ def earley_parse(words, grammar, start_symbol='S'):
             return True, chart
     return False, chart
 
-# Запускаем Эрли-парсер
+
 print("\nInput string:", " ".join(w))
 res, chart = earley_parse(w, earley_grammar, 'S')
 if res:
@@ -164,7 +171,6 @@ if res:
 else:
     print("Строка не выводится.")
 
-# Печать количества состояний в каждом шаге Earley
 print("\nEarley Chart States Count:")
 print("Index | States Count")
 print("------|-------------")
@@ -174,10 +180,20 @@ for i, states in enumerate(chart):
 print("\nEarley Parsing Chart:")
 for i, states in enumerate(chart):
     print(f"i={i}:")
-    for (lhs, done, todo, origin) in states:
+    # Если очень много состояний, тоже можно сократить их количество
+    # Допустим, если более 10 состояний, выведем только первые 3, ... , последние 3
+    max_states_display = 10
+    states_list = list(states)
+    if len(states_list) > max_states_display:
+        shortened_states = states_list[:3] + [("...", (), (), 0)] + states_list[-3:]
+    else:
+        shortened_states = states_list
+
+    for (lhs, done, todo, origin) in shortened_states:
+        if lhs == "...":
+            print("  ...")
+            continue
         done_str = " ".join(done)
         todo_str = " ".join(todo)
-        # Позицию можно пометить точкой:
-        # Пример: lhs -> done • todo
         print(f"  {lhs} -> {done_str} • {todo_str} (from {origin})")
     print()
