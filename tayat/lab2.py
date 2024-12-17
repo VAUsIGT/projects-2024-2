@@ -1,4 +1,4 @@
-# Определение автоматов
+# Определение автоматов (осущесвить предварительный вывод всех операторов, а также указание конечных и начальных)
 
 # Автомат L1
 # Состояния: p (начальное), q, r, s
@@ -41,8 +41,30 @@ def print_transition_table(transitions):
                 print(f"{str(state):<18} | {symbol:<6} | {str(ns)}")
 
 
+def process_string(initial, final, transitions, input_string):
+    current_states = {initial}
+    print(f"Начальное состояние: {current_states}")
+
+    for symbol in input_string:
+        next_states = set()
+        for state in current_states:
+            if symbol in transitions[state]:
+                next_states.update(transitions[state][symbol])
+        current_states = next_states
+        print(f"Символ: {symbol}, Следующие состояния: {current_states}")
+
+        if not current_states:  # Если нет переходов, строка не принята
+            print("Переходов больше нет. Строка не принята.")
+            return
+
+    # Проверяем, есть ли конечное состояние среди текущих
+    if current_states.intersection(final):
+        print("Остановились на конечном состоянии. Строка принята.")
+    else:
+        print("Конечного состояния нет. Строка не принята.")
+
 def union_automata(L1_init, L1_fin, L1_trans, L2_init, L2_fin, L2_trans):
-    # Создаем новое начальное состояние F c e-переходами к L1_init и L2_init
+    # Создаем новое начальное состояние F c e-переходами к L1_init и L2_init             у автомата на входе терминальная строка, дальше указывается последоввательность переходов
     # Создаем новое конечное состояние E c e-переходами из всех конечных L1_fin и L2_fin
     union_trans = {}
     union_final = set()
@@ -79,11 +101,6 @@ def union_automata(L1_init, L1_fin, L1_trans, L2_init, L2_fin, L2_trans):
 
 def intersection_automata(L1_states, L1_init, L1_fin, L1_trans,
                           L2_states, L2_init, L2_fin, L2_trans):
-    # Пересечение по "совместным путям":
-    # Состояния - конкатенация: s1 + s2
-    # Переходы только по символам, которые есть в обоих автоматах (пересечение ключей).
-    # Конечные - (f1+f2) где f1 в L1_fin и f2 в L2_fin.
-
     inter_trans = {}
     inter_final = set()
 
@@ -106,7 +123,7 @@ def intersection_automata(L1_states, L1_init, L1_fin, L1_trans,
     inter_initial = L1_init + L2_init
     # Конечные - пары конечных
     for s1f in L1_fin:
-        for s2f in L2_final:
+        for s2f in L2_fin:
             inter_final.add(s1f + s2f)
 
     return inter_initial, inter_final, inter_trans
@@ -115,10 +132,7 @@ def intersection_automata(L1_states, L1_init, L1_fin, L1_trans,
 def difference_automata(L1_states, L1_init, L1_fin, L1_trans,
                         L2_states, L2_init, L2_fin, L2_trans):
     # Вычитание:
-    # Аналогично пересечению, но q' становится конечным, а r' перестает быть конечным.
-    # Значит для L2_final_mod = { "q'" }.
-    # Конечные: (f1, q') для всех f1 ∈ L1_fin.
-
+    # Для L2_final_mod = { "q'" }.
     L2_modified_final = {"q'"}
     diff_trans = {}
     diff_final = set()
@@ -171,35 +185,41 @@ def concatenation_automata(L1_states, L1_init, L1_fin, L1_trans,
     return concat_initial, concat_final, concat_trans
 
 
-print("Выберите операцию: объединение - 1, пересечение - 2, вычитание - 3, конкатенация - 4")
-operation = 'intersection'  # или 'difference', чтобы проверить вычитание
+# Выбор операции
+print("Выберите операцию:")
+print("1 - объединение")
+print("2 - пересечение")
+print("3 - вычитание")
+print("4 - конкатенация")
+operation = input("Введите номер операции: ")
 
-if operation == 'union':
+if operation == '1':
     init, final, trans = union_automata(L1_initial, L1_final, L1_transitions,
                                         L2_initial, L2_final, L2_transitions)
     print("Объединение автоматов:")
-    print_transition_table(trans)
-
-elif operation == 'intersection':
+elif operation == '2':
     init, final, trans = intersection_automata(L1_states, L1_initial, L1_final, L1_transitions,
                                                L2_states, L2_initial, L2_final, L2_transitions)
     print("Пересечение автоматов:")
-    print_transition_table(trans)
-    print("Начальное состояние пересечения:", init)
-    print("Конечные состояния пересечения:", final)
-
-elif operation == 'difference':
+elif operation == '3':
     init, final, trans = difference_automata(L1_states, L1_initial, L1_final, L1_transitions,
                                              L2_states, L2_initial, L2_final, L2_transitions)
     print("Вычитание автоматов:")
-    print_transition_table(trans)
-    print("Начальное состояние вычитания:", init)
-    print("Конечные состояния вычитания:", final)
-
-elif operation == 'concatenation':
+elif operation == '4':
     init, final, trans = concatenation_automata(L1_states, L1_initial, L1_final, L1_transitions,
                                                 L2_states, L2_initial, L2_final, L2_transitions)
     print("Конкатенация автоматов:")
-    print_transition_table(trans)
-    print("Начальное состояние конкатенации:", init)
-    print("Конечные состояния конкатенации:", final)
+else:
+    print("Неверная операция. Завершение работы программы.")
+    exit()
+
+# Печать результата выбранной операции
+print_transition_table(trans)
+all_states = set(trans.keys())
+print("Все состояния:", all_states)
+print("Начальное состояние:", init)
+print("Конечные состояния:", final)
+
+# Проверка строки
+input_string = input("Введите строку из символов 'a' и 'b': ")
+process_string(init, final, trans, input_string)

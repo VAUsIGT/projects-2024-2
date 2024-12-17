@@ -1,5 +1,22 @@
 # Определяем правила грамматики
-grammar = {
+grammar_G = {
+    #Грейбах
+    'S': ['2 S_1'],
+    'S_1': ['* S_2'],
+    'S_2': ['2 S_3'],
+    'S_3': ['* S_4'],
+    'S_4': ['2 C S_5'],
+    'S_5': ['- S_6'],
+    'S_6': ['1 S_7'],
+    'S_7': ['- S_8'],
+    'S_8': ['1'],
+    'C': ['* D C M O', ''],  # ε-переход
+    'D': ['2'],
+    'M': ['-'],
+    'O': ['1']
+}
+grammar_H = {
+    #Хомского
     'S': ['2 S_2 G_2'],
     'G_2': ['C S_3'],
     'S_2': ['Y Y'],
@@ -14,6 +31,17 @@ grammar = {
     'B_1': ['-'],
     'B_2': ['1']
 }
+grammar = {}
+
+def choose_grammar(option):
+    """Выбирает грамматику на основе параметра option."""
+    global grammar
+    if option == 'G':
+        grammar = grammar_G
+    elif option == 'H':
+        grammar = grammar_H
+    else:
+        raise ValueError("Неверный выбор грамматики. Используйте 'G' или 'H'.")
 
 def expand_non_terminal(symbol, ct):
     """Разворачиваем нетерминальный символ с учётом текущего значения ct."""
@@ -51,8 +79,10 @@ def generate_string(start_symbol, ct):
 
     return ''.join(result)
 
-
+# Ввод пользователя для выбора грамматики
+grammar_choice = input("Выберите грамматику ('G' для Грейбах, 'H' для Хомского): ").strip().upper()
+choose_grammar(grammar_choice)
 # Примеры вызова
 print(generate_string('S', 0))  # Ожидается: 2*2*2-1-1
-print(generate_string('S', 1))  # Ожидается: 2*2*2*2-1-1-1
-print(generate_string('S', 2))  # Ожидается: 2*2*2*2*2-1-1-1-1
+print(generate_string('S', 5))  # Ожидается: 2*2*2*2-1-1-1
+print(generate_string('S', 10))  # Ожидается: 2*2*2*2*2-1-1-1-1

@@ -162,6 +162,9 @@ def main():
         print("Синтаксическая ошибка")
         return
 
+    # Выведем ОПН
+    print("ОПН:", " ".join(rpn))
+
     try:
         result = evaluate_rpn(rpn)
         print("Результат:", result)
